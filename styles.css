@@ -1,0 +1,448 @@
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2ecc71;
+    --warning-color: #e74c3c;
+    --background-color: #f5f7fa;
+    --text-color: #2c3e50;
+    --card-color: #ffffff;
+    --border-color: #dfe4ea;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.game-screen {
+    display: none;
+    background-color: var(--card-color);
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.game-screen.active {
+    display: block;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+h3 {
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+/* Lobby Screen Styles */
+.lobby-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.lobby-options button {
+    padding: 15px;
+    font-size: 1.2rem;
+}
+
+/* Create and Join Game Screens */
+.host-options,
+.join-options {
+    margin-bottom: 30px;
+}
+
+.instruction {
+    margin: 15px 0;
+    font-style: italic;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.code {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 5px;
+    margin: 20px 0;
+    text-align: center;
+    background-color: var(--background-color);
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px dashed var(--border-color);
+}
+
+.players-list {
+    margin-top: 30px;
+}
+
+.players-list ul {
+    list-style: none;
+    background-color: var(--background-color);
+    padding: 15px;
+    border-radius: 8px;
+    min-height: 100px;
+}
+
+.players-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.players-list li:last-child {
+    border-bottom: none;
+}
+
+.players-list li .host-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.player-setup {
+    margin-bottom: 30px;
+}
+
+.player-inputs {
+    margin-bottom: 15px;
+}
+
+.player-input {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.player-name {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.remove-player {
+    background-color: var(--warning-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.primary-btn:hover {
+    background-color: #2980b9;
+}
+
+.secondary-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.secondary-btn:hover {
+    background-color: #27ae60;
+}
+
+.warning-btn {
+    background-color: var(--warning-color);
+    color: white;
+}
+
+.warning-btn:hover {
+    background-color: #c0392b;
+}
+
+#add-player {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.game-options {
+    margin-bottom: 30px;
+}
+
+.option {
+    margin-bottom: 15px;
+}
+
+.option label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.option input,
+.option select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+#start-local-game,
+#start-game-lobby,
+#generate-code,
+#join-game {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+}
+
+.role-reveal {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.role-reveal h3 {
+    font-size: 1.8rem;
+    margin: 15px 0;
+}
+
+#role-info {
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
+
+.location-box,
+.role-box {
+    background-color: var(--background-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.location-box h3,
+.role-box h3 {
+    margin-bottom: 10px;
+}
+
+.location-box p,
+.role-box p {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+#spy-locations-list {
+    background-color: var(--background-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.spy-locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.spy-location-item {
+    background-color: var(--card-color);
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+}
+
+#hide-role {
+    margin-right: 10px;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.timer {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.game-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.location-list,
+.suggested-questions {
+    background-color: var(--background-color);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+#locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.location-card {
+    background-color: var(--card-color);
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.location-card.crossed {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.suggested-questions {
+    margin-bottom: 30px;
+}
+
+#new-question {
+    margin-bottom: 15px;
+}
+
+#question-display {
+    background-color: var(--card-color);
+    padding: 15px;
+    border-radius: 5px;
+    font-style: italic;
+}
+
+#end-game {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.reveal,
+.spy-reveal {
+    background-color: var(--background-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.reveal p {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+#spy-list {
+    list-style: none;
+    margin-top: 10px;
+}
+
+#spy-list li {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+#new-game {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2rem;
+}
+
+/* Back buttons */
+#back-to-lobby, 
+#back-to-lobby-from-join,
+#leave-lobby {
+    margin-top: 20px;
+}
+
+/* Responsive Styles */
+@media (min-width: 768px) {
+    .game-content {
+        flex-direction: row;
+    }
+
+    .location-list,
+    .suggested-questions {
+        flex: 1;
+    }
+    
+    .lobby-options {
+        flex-direction: row;
+        justify-content: center;
+    }
+    
+    .lobby-options button {
+        flex: 1;
+        max-width: 300px;
+    }
+} 

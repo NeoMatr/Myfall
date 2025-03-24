@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocationSpy</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>LocationSpy</h1>
+            <p class="subtitle">A location-based deduction game</p>
+        </header>
+
+        <div id="lobby-screen" class="game-screen active">
+            <h2>Welcome to LocationSpy</h2>
+            <div class="lobby-options">
+                <button id="create-lobby" class="primary-btn">Create Game</button>
+                <button id="join-lobby" class="secondary-btn">Join Game</button>
+            </div>
+        </div>
+
+        <div id="create-screen" class="game-screen">
+            <h2>Create Game</h2>
+            <div class="host-options">
+                <div class="option">
+                    <label for="host-name">Your Name:</label>
+                    <input type="text" id="host-name" placeholder="Enter your name">
+                </div>
+                <div class="option">
+                    <label for="game-time">Game Time (minutes):</label>
+                    <input type="number" id="game-time" min="5" max="15" value="8">
+                </div>
+                <div class="option">
+                    <label for="num-spies">Number of Spies:</label>
+                    <input type="number" id="num-spies" min="1" max="3" value="1">
+                </div>
+                <div class="option">
+                    <label for="location-pack">Location Pack:</label>
+                    <select id="location-pack">
+                        <option value="standard">Standard</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="all">All Locations</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="generate-code" class="primary-btn">Create Lobby</button>
+            <div id="lobby-code-display" class="hidden">
+                <h3>Lobby Code:</h3>
+                <p id="lobby-code" class="code">XXXX</p>
+                <p class="instruction">Share this code with other players</p>
+            </div>
+            
+            <div class="players-list">
+                <h3>Players:</h3>
+                <ul id="lobby-players"></ul>
+            </div>
+            
+            <button id="start-game-lobby" class="primary-btn hidden">Start Game</button>
+            <button id="back-to-lobby" class="secondary-btn">Back</button>
+        </div>
+
+        <div id="join-screen" class="game-screen">
+            <h2>Join Game</h2>
+            <div class="join-options">
+                <div class="option">
+                    <label for="player-name">Your Name:</label>
+                    <input type="text" id="player-name" placeholder="Enter your name">
+                </div>
+                <div class="option">
+                    <label for="lobby-code-input">Lobby Code:</label>
+                    <input type="text" id="lobby-code-input" placeholder="Enter 4-digit code">
+                </div>
+            </div>
+            
+            <button id="join-game" class="primary-btn">Join Game</button>
+            <button id="back-to-lobby-from-join" class="secondary-btn">Back</button>
+        </div>
+
+        <div id="waiting-screen" class="game-screen">
+            <h2>Waiting for Game to Start</h2>
+            <p class="instruction">The host will start the game soon</p>
+            
+            <div class="players-list">
+                <h3>Players:</h3>
+                <ul id="waiting-players"></ul>
+            </div>
+            
+            <button id="leave-lobby" class="warning-btn">Leave Game</button>
+        </div>
+
+        <div id="setup-screen" class="game-screen">
+            <h2>Game Setup</h2>
+            <div class="player-setup">
+                <h3>Players</h3>
+                <div class="player-inputs">
+                    <div class="player-input">
+                        <input type="text" placeholder="Player name" class="player-name">
+                        <button class="remove-player">×</button>
+                    </div>
+                </div>
+                <button id="add-player">Add Player</button>
+            </div>
+            
+            <div class="game-options">
+                <div class="option">
+                    <label for="local-game-time">Game Time (minutes):</label>
+                    <input type="number" id="local-game-time" min="5" max="15" value="8">
+                </div>
+                <div class="option">
+                    <label for="local-location-pack">Location Pack:</label>
+                    <select id="local-location-pack">
+                        <option value="standard">Standard</option>
+                        <option value="advanced">Advanced</option>
+                        <option value="all">All Locations</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="start-local-game" class="primary-btn">Start Game</button>
+        </div>
+
+        <div id="role-screen" class="game-screen">
+            <h2>Your Role</h2>
+            <div class="role-reveal">
+                <p>Pass the device to:</p>
+                <h3 id="current-player">Player Name</h3>
+                <button id="show-role" class="primary-btn">Show My Role</button>
+            </div>
+            
+            <div id="role-info" class="hidden">
+                <div class="location-box">
+                    <h3>Location:</h3>
+                    <p id="location-name">Location Name</p>
+                </div>
+                <div class="role-box">
+                    <h3>Your Role:</h3>
+                    <p id="role-name">Role Name</p>
+                </div>
+                <div id="spy-locations-list" class="hidden">
+                    <h3>Possible Locations:</h3>
+                    <div id="spy-locations-grid" class="spy-locations-grid"></div>
+                </div>
+                <button id="hide-role" class="secondary-btn">Hide</button>
+                <button id="next-player" class="primary-btn">Next Player</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="game-screen">
+            <div class="game-header">
+                <h2>Game in Progress</h2>
+                <div class="timer">
+                    <span id="time-remaining">08:00</span>
+                </div>
+            </div>
+            
+            <div class="game-content">
+                <div class="location-list">
+                    <h3>Possible Locations</h3>
+                    <div id="locations-grid"></div>
+                </div>
+                
+                <div class="suggested-questions">
+                    <h3>Suggested Questions</h3>
+                    <button id="new-question" class="secondary-btn">New Question</button>
+                    <p id="question-display">How do you feel about being here?</p>
+                </div>
+            </div>
+            
+            <button id="end-game" class="warning-btn">End Game</button>
+        </div>
+
+        <div id="end-screen" class="game-screen">
+            <h2>Game Over</h2>
+            <div class="reveal">
+                <h3>The location was:</h3>
+                <p id="final-location">Location Name</p>
+            </div>
+            <div class="spy-reveal">
+                <h3>The spies were:</h3>
+                <ul id="spy-list"></ul>
+            </div>
+            <button id="new-game" class="primary-btn">New Game</button>
+        </div>
+    </div>
+    
+    <script src="game-data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 

@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Game state
-    const state = {
+    window.state = {
         players: [],
         currentPlayerIndex: 0,
         location: null,
@@ -14,7 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
         isHost: false,
         playerName: "",
         numSpies: 1,
-        assignedRoles: []
+        assignedRoles: [],
+        // For P2P connections
+        peerToPlayerMap: {},
+        connectionStatus: 'disconnected'
     };
 
     // Game lobbies - In a real app, this would be server-side
@@ -39,14 +42,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const generateCodeBtn = document.getElementById('generate-code');
     const lobbyCodeDisplay = document.getElementById('lobby-code-display');
-    const lobbyCode = document.getElementById('lobby-code');
+    const lobbyCodeEl = document.getElementById('lobby-code');
     const lobbyPlayers = document.getElementById('lobby-players');
     const startGameLobbyBtn = document.getElementById('start-game-lobby');
+    const connectionStatus = document.getElementById('connection-status');
     
     const playerNameInput = document.getElementById('player-name');
     const lobbyCodeInput = document.getElementById('lobby-code-input');
     const joinGameBtn = document.getElementById('join-game');
+    const joinStatus = document.getElementById('join-status');
     const waitingPlayers = document.getElementById('waiting-players');
+    const waitingStatus = document.getElementById('waiting-status');
     
     // DOM elements - Game screens
     const setupScreen = document.getElementById('setup-screen');
@@ -65,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleInfo = document.getElementById('role-info');
     const locationName = document.getElementById('location-name');
     const roleName = document.getElementById('role-name');
+    const locationImage = document.getElementById('location-image');
     const spyLocationsList = document.getElementById('spy-locations-list');
     const spyLocationsGrid = document.getElementById('spy-locations-grid');
     const hideRoleBtn = document.getElementById('hide-role');
@@ -77,11 +84,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const endGameBtn = document.getElementById('end-game');
     
     const finalLocation = document.getElementById('final-location');
+    const finalLocationImage = document.getElementById('final-location-image');
     const spyList = document.getElementById('spy-list');
     const newGameBtn = document.getElementById('new-game');
 
     // Initialize the game
     initGame();
+
+    // Create images folder if not already done
+    createImagesDirectory();
 
     function initGame() {
         // Lobby event listeners
@@ -146,6 +157,123 @@ document.addEventListener('DOMContentLoaded', function() {
         numSpiesInput.addEventListener('change', function() {
             state.numSpies = parseInt(this.value);
         });
+        
+        // Set up P2P callbacks
+        setupP2PCallbacks();
+    }
+
+    // P2P callback setup
+    function setupP2PCallbacks() {
+        window.p2pManager.setCallbacks({
+            onPlayerJoined: handlePlayerJoined,
+            onPlayerLeft: handlePlayerLeft,
+            onGameStart: handleGameStart,
+            onError: handleConnectionError,
+            onConnected: handleConnected,
+            onDisconnected: handleDisconnected
+        });
+        
+        // Define global functions for P2P manager to call
+        window.updateWaitingPlayersFromHost = updateWaitingPlayersFromHost;
+        window.addPlayerToWaitingList = addPlayerToWaitingList;
+    }
+    
+    // Callback functions for P2P
+    function handlePlayerJoined(playerInfo) {
+        // Add player to peer-to-player map
+        state.peerToPlayerMap[playerInfo.playerName] = {
+            playerName: playerInfo.playerName,
+            peerId: playerInfo.peerId
+        };
+        
+        // Update the UI
+        updateLobbyPlayers();
+        
+        // Update connection status
+        connectionStatus.textContent = `${Object.keys(state.peerToPlayerMap).length} player(s) connected`;
+    }
+    
+    function handlePlayerLeft(playerName) {
+        // Remove player from peer-to-player map
+        delete state.peerToPlayerMap[playerName];
+        
+        // Update the UI
+        updateLobbyPlayers();
+        
+        // Update connection status
+        connectionStatus.textContent = `${Object.keys(state.peerToPlayerMap).length} player(s) connected`;
+    }
+    
+    function handleGameStart(gameData) {
+        // Set received game data
+        state.players = gameData.players;
+        state.location = gameData.location;
+        state.spies = gameData.spies;
+        state.assignedRoles = gameData.assignedRoles;
+        state.timeInMinutes = gameData.timeInMinutes;
+        
+        // Start the game for this client
+        startOnlineGameForPlayer();
+    }
+    
+    function handleConnectionError(errorMessage) {
+        if (state.isHost) {
+            connectionStatus.textContent = `Error: ${errorMessage}`;
+            connectionStatus.classList.add('warning');
+        } else {
+            joinStatus.textContent = `Error: ${errorMessage}`;
+            joinStatus.classList.remove('hidden');
+            joinStatus.classList.add('warning');
+        }
+    }
+    
+    function handleConnected() {
+        // Client connected to host
+        joinStatus.textContent = 'Connected to host!';
+        joinStatus.classList.remove('hidden');
+        joinStatus.classList.add('success');
+        
+        // Show waiting screen after a delay
+        setTimeout(() => {
+            showScreen(waitingScreen);
+        }, 1000);
+    }
+    
+    function handleDisconnected() {
+        // Client disconnected from host
+        waitingStatus.textContent = 'Disconnected from host';
+        waitingStatus.classList.add('warning');
+        
+        // Return to lobby after a delay
+        setTimeout(() => {
+            resetGame();
+        }, 3000);
+    }
+    
+    // Update waiting players from host data
+    function updateWaitingPlayersFromHost(players, hostName) {
+        waitingPlayers.innerHTML = '';
+        
+        players.forEach((playerName, index) => {
+            const li = document.createElement('li');
+            li.textContent = playerName;
+            
+            if (playerName === hostName) {
+                const hostBadge = document.createElement('span');
+                hostBadge.classList.add('host-badge');
+                hostBadge.textContent = 'Host';
+                li.appendChild(hostBadge);
+            }
+            
+            waitingPlayers.appendChild(li);
+        });
+    }
+    
+    // Add a player to the waiting list (for clients)
+    function addPlayerToWaitingList(playerName) {
+        const li = document.createElement('li');
+        li.textContent = playerName;
+        waitingPlayers.appendChild(li);
     }
 
     // Lobby Functions
@@ -158,6 +286,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function goBackToLobby() {
+        // Clean up any P2P connections
+        window.p2pManager.cleanup();
+        
+        // Reset connection states
+        connectionStatus.textContent = 'Waiting for players to join...';
+        connectionStatus.classList.remove('warning', 'success');
+        joinStatus.classList.add('hidden');
+        joinStatus.classList.remove('warning', 'success');
+        
+        // Clear inputs
+        hostNameInput.value = '';
+        playerNameInput.value = '';
+        lobbyCodeInput.value = '';
+        
+        // Go back to lobby screen
         showScreen(lobbyScreen);
     }
 
@@ -178,22 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Generate a unique lobby code
-        let newLobbyCode;
-        do {
-            newLobbyCode = generateLobbyCode();
-        } while (lobbies[newLobbyCode]);
-        
-        // Create lobby
-        lobbies[newLobbyCode] = {
-            host: playerName,
-            players: [playerName],
-            settings: {
-                timeInMinutes: parseInt(gameTimeInput.value),
-                locationPack: locationPackSelect.value,
-                numSpies: parseInt(numSpiesInput.value)
-            },
-            gameStarted: false
-        };
+        const newLobbyCode = generateLobbyCode();
         
         // Update state
         state.lobbyCode = newLobbyCode;
@@ -204,8 +332,17 @@ document.addEventListener('DOMContentLoaded', function() {
         state.locationPack = locationPackSelect.value;
         state.numSpies = parseInt(numSpiesInput.value);
         
+        // Initialize P2P as host
+        window.p2pManager.initAsHost(newLobbyCode);
+        
+        // Add host to player map
+        state.peerToPlayerMap[playerName] = {
+            playerName: playerName,
+            peerId: 'host'
+        };
+        
         // Display lobby code and update UI
-        lobbyCode.textContent = newLobbyCode;
+        lobbyCodeEl.textContent = newLobbyCode;
         lobbyCodeDisplay.classList.remove('hidden');
         updateLobbyPlayers();
         startGameLobbyBtn.classList.remove('hidden');
@@ -220,23 +357,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (!code) {
-            alert('Please enter a lobby code');
+        if (!code || code.length !== 4) {
+            alert('Please enter a valid 4-digit lobby code');
             return;
         }
-        
-        if (!lobbies[code]) {
-            alert('Lobby not found. Check the code and try again.');
-            return;
-        }
-        
-        if (lobbies[code].gameStarted) {
-            alert('This game has already started.');
-            return;
-        }
-        
-        // Add player to lobby
-        lobbies[code].players.push(playerName);
         
         // Update state
         state.lobbyCode = code;
@@ -244,52 +368,23 @@ document.addEventListener('DOMContentLoaded', function() {
         state.playerName = playerName;
         state.isOnlineGame = true;
         
-        // Get settings from lobby
-        const lobbySettings = lobbies[code].settings;
-        state.timeInMinutes = lobbySettings.timeInMinutes;
-        state.locationPack = lobbySettings.locationPack;
-        state.numSpies = lobbySettings.numSpies;
+        // Show connecting status
+        joinStatus.textContent = 'Connecting to host...';
+        joinStatus.classList.remove('hidden');
         
-        // Show waiting screen
-        showScreen(waitingScreen);
-        updateWaitingPlayers();
-        
-        // In a real app, we would use WebSockets to update all clients
-        // Here we'll simulate game start notification by polling
-        pollForGameStart();
-    }
-    
-    function pollForGameStart() {
-        // In a real app, this would be handled by WebSockets
-        const intervalId = setInterval(() => {
-            if (lobbies[state.lobbyCode] && lobbies[state.lobbyCode].gameStarted) {
-                clearInterval(intervalId);
-                
-                // Get game data from the lobby
-                const lobby = lobbies[state.lobbyCode];
-                state.players = lobby.players;
-                state.location = lobby.location;
-                state.spies = lobby.spies;
-                state.assignedRoles = lobby.assignedRoles;
-                
-                // Start role reveal for this player
-                startOnlineGameForPlayer();
-            }
-        }, 1000);
-        
-        // Store the interval ID so we can clear it when leaving
-        state.pollInterval = intervalId;
+        // Initialize P2P as client
+        window.p2pManager.initAsClient(code);
     }
     
     function updateLobbyPlayers() {
         lobbyPlayers.innerHTML = '';
-        const lobby = lobbies[state.lobbyCode];
         
-        lobby.players.forEach((player, index) => {
+        // Add all players from the peer-to-player map
+        Object.values(state.peerToPlayerMap).forEach(playerInfo => {
             const li = document.createElement('li');
-            li.textContent = player;
+            li.textContent = playerInfo.playerName;
             
-            if (index === 0) {
+            if (playerInfo.peerId === 'host') {
                 const hostBadge = document.createElement('span');
                 hostBadge.classList.add('host-badge');
                 hostBadge.textContent = 'Host';
@@ -300,57 +395,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function updateWaitingPlayers() {
-        waitingPlayers.innerHTML = '';
-        const lobby = lobbies[state.lobbyCode];
-        
-        lobby.players.forEach((player, index) => {
-            const li = document.createElement('li');
-            li.textContent = player;
-            
-            if (index === 0) {
-                const hostBadge = document.createElement('span');
-                hostBadge.classList.add('host-badge');
-                hostBadge.textContent = 'Host';
-                li.appendChild(hostBadge);
-            }
-            
-            waitingPlayers.appendChild(li);
-        });
-    }
-    
     function leaveLobby() {
-        if (state.pollInterval) {
-            clearInterval(state.pollInterval);
-        }
-        
-        // Remove player from lobby
-        if (state.lobbyCode && lobbies[state.lobbyCode]) {
-            const playerIndex = lobbies[state.lobbyCode].players.indexOf(state.playerName);
-            if (playerIndex !== -1) {
-                lobbies[state.lobbyCode].players.splice(playerIndex, 1);
-                
-                // If no players left, delete the lobby
-                if (lobbies[state.lobbyCode].players.length === 0) {
-                    delete lobbies[state.lobbyCode];
-                }
-            }
-        }
+        // Clean up P2P connections
+        window.p2pManager.cleanup();
         
         // Reset state
         state.lobbyCode = null;
         state.isHost = false;
         state.playerName = "";
         state.isOnlineGame = false;
+        state.peerToPlayerMap = {};
         
         // Go back to lobby screen
         showScreen(lobbyScreen);
     }
     
     function startOnlineGame() {
-        const lobby = lobbies[state.lobbyCode];
+        const playerCount = Object.keys(state.peerToPlayerMap).length;
         
-        if (lobby.players.length < 3) {
+        if (playerCount < 3) {
             alert('You need at least 3 players to start the game.');
             return;
         }
@@ -360,12 +423,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const randomLocationIndex = Math.floor(Math.random() * locations.length);
         const selectedLocation = locations[randomLocationIndex];
         
-        // Set up spies and roles
-        const players = lobby.players;
-        const assignedRoles = [];
-        const spies = [];
+        // Set up players from peer-to-player map
+        const players = Object.values(state.peerToPlayerMap).map(p => p.playerName);
         
         // Choose random spy indices
+        const spies = [];
         const numSpies = Math.min(state.numSpies, players.length - 1);
         const playerIndices = Array.from({ length: players.length }, (_, i) => i);
         
@@ -377,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Assign roles to players
         const roles = [...selectedLocation.roles];
+        const assignedRoles = [];
         
         for (let i = 0; i < players.length; i++) {
             if (spies.includes(i)) {
@@ -393,17 +456,23 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Store game data in the lobby
-        lobby.gameStarted = true;
-        lobby.location = selectedLocation;
-        lobby.spies = spies;
-        lobby.assignedRoles = assignedRoles;
-        
         // Update local state
         state.players = players;
         state.location = selectedLocation;
         state.spies = spies;
         state.assignedRoles = assignedRoles;
+        
+        // Create game data to send to clients
+        const gameData = {
+            players: players,
+            location: selectedLocation,
+            spies: spies,
+            assignedRoles: assignedRoles,
+            timeInMinutes: state.timeInMinutes
+        };
+        
+        // Send game data to all clients
+        window.p2pManager.startGame(gameData);
         
         // Start role reveal for host
         startOnlineGameForPlayer();
@@ -421,10 +490,14 @@ document.addEventListener('DOMContentLoaded', function() {
         showScreen(roleScreen);
         currentPlayerEl.textContent = state.playerName;
         
-        // For non-hosts, we'll show the role immediately
-        if (!state.isHost) {
-            showRole();
-        }
+        // Populate locations grid for the game screen
+        populateLocationsGrid();
+        
+        // Set up timer based on selected time
+        timeRemainingEl.textContent = formatTime(state.timeInMinutes * 60);
+        
+        // Immediately show role for this player
+        showRole();
     }
 
     // Local Game Functions
@@ -528,6 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // For spies, show a list of all possible locations
             locationName.textContent = '???';
             roleName.textContent = 'Spy (find the location)';
+            locationImage.src = 'images/placeholder.jpg';
             
             // Show possible locations to the spy
             populateSpyLocationsGrid();
@@ -536,6 +610,15 @@ document.addEventListener('DOMContentLoaded', function() {
             locationName.textContent = state.location.name;
             roleName.textContent = role;
             spyLocationsList.classList.add('hidden');
+            
+            // Set the location image
+            const locationImagePath = `images/${state.location.name.toLowerCase().replace(/ /g, '_')}.jpg`;
+            locationImage.src = locationImagePath;
+            
+            // Fallback to placeholder if image doesn't exist
+            locationImage.onerror = function() {
+                this.src = 'images/placeholder.jpg';
+            };
         }
         
         roleInfo.classList.remove('hidden');
@@ -633,6 +716,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         finalLocation.textContent = state.location.name;
         
+        // Set the final location image
+        const locationImagePath = `images/${state.location.name.toLowerCase().replace(/ /g, '_')}.jpg`;
+        finalLocationImage.src = locationImagePath;
+        
+        // Fallback to placeholder if image doesn't exist
+        finalLocationImage.onerror = function() {
+            this.src = 'images/placeholder.jpg';
+        };
+        
         // Show spies
         spyList.innerHTML = '';
         state.spies.forEach(spyIndex => {
@@ -645,10 +737,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function resetGame() {
-        // Clear polling interval if it exists
-        if (state.pollInterval) {
-            clearInterval(state.pollInterval);
-        }
+        // Clean up P2P connections
+        window.p2pManager.cleanup();
         
         // Reset game state
         state.players = [];
@@ -661,6 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
         state.lobbyCode = null;
         state.isHost = false;
         state.playerName = "";
+        state.peerToPlayerMap = {};
         
         if (state.timerInterval) {
             clearInterval(state.timerInterval);
@@ -678,6 +769,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset lobby code display
         lobbyCodeDisplay.classList.add('hidden');
         startGameLobbyBtn.classList.add('hidden');
+        
+        // Reset status messages
+        connectionStatus.textContent = 'Waiting for players to join...';
+        connectionStatus.classList.remove('warning', 'success');
+        joinStatus.classList.add('hidden');
         
         // Add first player input for local game
         addPlayer();
@@ -699,5 +795,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show the requested screen
         screen.classList.add('active');
+    }
+    
+    // Create the images directory and placeholder
+    function createImagesDirectory() {
+        // This would normally be handled during project setup
+        // For this web application, we'll assume images directory exists and just console log
+        console.log("Images directory should be created with the following structure:");
+        console.log("images/");
+        console.log("  placeholder.jpg");
+        console.log("  beach.jpg");
+        console.log("  hospital.jpg");
+        console.log("  etc...");
     }
 }); 

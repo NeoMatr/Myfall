@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocationSpy</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Add PeerJS for P2P connection -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -51,6 +53,7 @@
                 <h3>Lobby Code:</h3>
                 <p id="lobby-code" class="code">XXXX</p>
                 <p class="instruction">Share this code with other players</p>
+                <p id="connection-status" class="status">Waiting for players to join...</p>
             </div>
             
             <div class="players-list">
@@ -76,12 +79,14 @@
             </div>
             
             <button id="join-game" class="primary-btn">Join Game</button>
+            <p id="join-status" class="status hidden">Connecting to host...</p>
             <button id="back-to-lobby-from-join" class="secondary-btn">Back</button>
         </div>
 
         <div id="waiting-screen" class="game-screen">
             <h2>Waiting for Game to Start</h2>
             <p class="instruction">The host will start the game soon</p>
+            <p id="waiting-status" class="status">Connected to lobby</p>
             
             <div class="players-list">
                 <h3>Players:</h3>
@@ -133,7 +138,12 @@
             <div id="role-info" class="hidden">
                 <div class="location-box">
                     <h3>Location:</h3>
-                    <p id="location-name">Location Name</p>
+                    <div class="location-container">
+                        <p id="location-name">Location Name</p>
+                        <div id="location-image-container" class="location-image-container">
+                            <img id="location-image" class="location-image" src="images/placeholder.jpg" alt="Location">
+                        </div>
+                    </div>
                 </div>
                 <div class="role-box">
                     <h3>Your Role:</h3>
@@ -177,6 +187,9 @@
             <div class="reveal">
                 <h3>The location was:</h3>
                 <p id="final-location">Location Name</p>
+                <div id="final-location-image-container" class="location-image-container">
+                    <img id="final-location-image" class="location-image" src="images/placeholder.jpg" alt="Location">
+                </div>
             </div>
             <div class="spy-reveal">
                 <h3>The spies were:</h3>
@@ -187,6 +200,7 @@
     </div>
     
     <script src="game-data.js"></script>
+    <script src="p2p-connection.js"></script>
     <script src="script.js"></script>
 </body>
 </html> 

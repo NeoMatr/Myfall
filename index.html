@@ -3,204 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocationSpy</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Add PeerJS for P2P connection -->
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <title>Spyfall Alternative</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>LocationSpy</h1>
-            <p class="subtitle">A location-based deduction game</p>
-        </header>
-
-        <div id="lobby-screen" class="game-screen active">
-            <h2>Welcome to LocationSpy</h2>
-            <div class="lobby-options">
-                <button id="create-lobby" class="primary-btn">Create Game</button>
-                <button id="join-lobby" class="secondary-btn">Join Game</button>
+    <div id="app">
+        <!-- Landing Page -->
+        <div id="landing-page" class="page active">
+            <div class="container">
+                <h1>Spyfall Alternative</h1>
+                <div class="buttons">
+                    <button id="create-game-btn" class="btn primary">Create Game</button>
+                    <button id="join-game-btn" class="btn secondary">Join Game</button>
+                </div>
+                <button id="tutorial-btn" class="btn tutorial">How to Play</button>
             </div>
         </div>
 
-        <div id="create-screen" class="game-screen">
-            <h2>Create Game</h2>
-            <div class="host-options">
-                <div class="option">
-                    <label for="host-name">Your Name:</label>
-                    <input type="text" id="host-name" placeholder="Enter your name">
-                </div>
-                <div class="option">
-                    <label for="game-time">Game Time (minutes):</label>
-                    <input type="number" id="game-time" min="5" max="15" value="8">
-                </div>
-                <div class="option">
-                    <label for="num-spies">Number of Spies:</label>
-                    <input type="number" id="num-spies" min="1" max="3" value="1">
-                </div>
-                <div class="option">
-                    <label for="location-pack">Location Pack:</label>
-                    <select id="location-pack">
-                        <option value="standard">Standard</option>
-                        <option value="advanced">Advanced</option>
-                        <option value="all">All Locations</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button id="generate-code" class="primary-btn">Create Lobby</button>
-            <div id="lobby-code-display" class="hidden">
-                <h3>Lobby Code:</h3>
-                <p id="lobby-code" class="code">XXXX</p>
-                <p class="instruction">Share this code with other players</p>
-                <p id="connection-status" class="status">Waiting for players to join...</p>
-            </div>
-            
-            <div class="players-list">
-                <h3>Players:</h3>
-                <ul id="lobby-players"></ul>
-            </div>
-            
-            <button id="start-game-lobby" class="primary-btn hidden">Start Game</button>
-            <button id="back-to-lobby" class="secondary-btn">Back</button>
-        </div>
-
-        <div id="join-screen" class="game-screen">
-            <h2>Join Game</h2>
-            <div class="join-options">
-                <div class="option">
+        <!-- Create Game Page -->
+        <div id="create-game-page" class="page">
+            <div class="container">
+                <h2>Create New Game</h2>
+                <div class="form-group">
                     <label for="player-name">Your Name:</label>
                     <input type="text" id="player-name" placeholder="Enter your name">
                 </div>
-                <div class="option">
-                    <label for="lobby-code-input">Lobby Code:</label>
-                    <input type="text" id="lobby-code-input" placeholder="Enter 4-digit code">
+                <div class="form-group">
+                    <label for="round-time">Round Time (minutes):</label>
+                    <input type="number" id="round-time" min="1" max="30" value="8">
+                </div>
+                <div class="form-group">
+                    <label for="spy-count">Number of Spies:</label>
+                    <input type="number" id="spy-count" min="1" max="3" value="1">
+                </div>
+                <div class="buttons">
+                    <button id="start-game-btn" class="btn primary">Create Lobby</button>
+                    <button class="btn back-btn">Back</button>
                 </div>
             </div>
-            
-            <button id="join-game" class="primary-btn">Join Game</button>
-            <p id="join-status" class="status hidden">Connecting to host...</p>
-            <button id="back-to-lobby-from-join" class="secondary-btn">Back</button>
         </div>
 
-        <div id="waiting-screen" class="game-screen">
-            <h2>Waiting for Game to Start</h2>
-            <p class="instruction">The host will start the game soon</p>
-            <p id="waiting-status" class="status">Connected to lobby</p>
-            
-            <div class="players-list">
-                <h3>Players:</h3>
-                <ul id="waiting-players"></ul>
+        <!-- Join Game Page -->
+        <div id="join-game-page" class="page">
+            <div class="container">
+                <h2>Join Game</h2>
+                <div class="form-group">
+                    <label for="join-player-name">Your Name:</label>
+                    <input type="text" id="join-player-name" placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label for="game-code">Game Code:</label>
+                    <input type="text" id="game-code" placeholder="Enter game code">
+                </div>
+                <div class="buttons">
+                    <button id="join-lobby-btn" class="btn primary">Join Lobby</button>
+                    <button class="btn back-btn">Back</button>
+                </div>
             </div>
-            
-            <button id="leave-lobby" class="warning-btn">Leave Game</button>
         </div>
 
-        <div id="setup-screen" class="game-screen">
-            <h2>Game Setup</h2>
-            <div class="player-setup">
-                <h3>Players</h3>
-                <div class="player-inputs">
-                    <div class="player-input">
-                        <input type="text" placeholder="Player name" class="player-name">
-                        <button class="remove-player">×</button>
+        <!-- Lobby Page -->
+        <div id="lobby-page" class="page">
+            <div class="container">
+                <h2>Game Lobby</h2>
+                <div class="game-info">
+                    <p>Game Code: <span id="lobby-code">XXXX</span> <button id="copy-code-btn" class="btn small"><i class="fas fa-copy"></i></button></p>
+                    <p>Round Time: <span id="lobby-time">8</span> minutes</p>
+                    <p>Spies: <span id="lobby-spies">1</span></p>
+                </div>
+                <div class="players-list">
+                    <h3>Players</h3>
+                    <ul id="players-container"></ul>
+                </div>
+                <div class="buttons">
+                    <button id="start-round-btn" class="btn primary">Start Round</button>
+                    <button id="leave-lobby-btn" class="btn secondary">Leave Lobby</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Page -->
+        <div id="game-page" class="page">
+            <div class="container">
+                <div class="game-header">
+                    <h2>Round in Progress</h2>
+                    <div class="timer" id="game-timer">08:00</div>
+                </div>
+                <div class="role-info">
+                    <div id="location-container">
+                        <h3>Location: <span id="location-name">???</span></h3>
+                        <p id="location-description"></p>
+                    </div>
+                    <div id="role-container">
+                        <h3>Your Role: <span id="player-role">???</span></h3>
+                        <p id="role-description"></p>
                     </div>
                 </div>
-                <button id="add-player">Add Player</button>
-            </div>
-            
-            <div class="game-options">
-                <div class="option">
-                    <label for="local-game-time">Game Time (minutes):</label>
-                    <input type="number" id="local-game-time" min="5" max="15" value="8">
-                </div>
-                <div class="option">
-                    <label for="local-location-pack">Location Pack:</label>
-                    <select id="local-location-pack">
-                        <option value="standard">Standard</option>
-                        <option value="advanced">Advanced</option>
-                        <option value="all">All Locations</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button id="start-local-game" class="primary-btn">Start Game</button>
-        </div>
-
-        <div id="role-screen" class="game-screen">
-            <h2>Your Role</h2>
-            <div class="role-reveal">
-                <p>Pass the device to:</p>
-                <h3 id="current-player">Player Name</h3>
-                <button id="show-role" class="primary-btn">Show My Role</button>
-            </div>
-            
-            <div id="role-info" class="hidden">
-                <div class="location-box">
-                    <h3>Location:</h3>
-                    <div class="location-container">
-                        <p id="location-name">Location Name</p>
-                        <div id="location-image-container" class="location-image-container">
-                            <img id="location-image" class="location-image" src="images/placeholder.jpg" alt="Location">
+                <div class="game-content">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="players-tab">Players</button>
+                        <button class="tab-btn" data-tab="locations-tab">Locations</button>
+                        <button class="tab-btn" data-tab="questions-tab">Questions</button>
+                    </div>
+                    <div class="tab-content">
+                        <div id="players-tab" class="tab-pane active">
+                            <div class="players-grid" id="game-players-container"></div>
+                            <div class="vote-section">
+                                <button id="vote-btn" class="btn primary">Vote</button>
+                            </div>
+                        </div>
+                        <div id="locations-tab" class="tab-pane">
+                            <div class="locations-grid" id="locations-container"></div>
+                        </div>
+                        <div id="questions-tab" class="tab-pane">
+                            <div class="questions-list" id="questions-container"></div>
                         </div>
                     </div>
                 </div>
-                <div class="role-box">
-                    <h3>Your Role:</h3>
-                    <p id="role-name">Role Name</p>
-                </div>
-                <div id="spy-locations-list" class="hidden">
-                    <h3>Possible Locations:</h3>
-                    <div id="spy-locations-grid" class="spy-locations-grid"></div>
-                </div>
-                <button id="hide-role" class="secondary-btn">Hide</button>
-                <button id="next-player" class="primary-btn">Next Player</button>
             </div>
         </div>
 
-        <div id="game-screen" class="game-screen">
-            <div class="game-header">
-                <h2>Game in Progress</h2>
-                <div class="timer">
-                    <span id="time-remaining">08:00</span>
+        <!-- Vote Modal -->
+        <div id="vote-modal" class="modal">
+            <div class="modal-content">
+                <h3>Vote for the Spy</h3>
+                <div class="vote-players-list" id="vote-players-container"></div>
+                <div class="buttons">
+                    <button id="submit-vote-btn" class="btn primary">Vote</button>
+                    <button id="cancel-vote-btn" class="btn secondary">Cancel</button>
                 </div>
             </div>
-            
-            <div class="game-content">
-                <div class="location-list">
-                    <h3>Possible Locations</h3>
-                    <div id="locations-grid"></div>
-                </div>
-                
-                <div class="suggested-questions">
-                    <h3>Suggested Questions</h3>
-                    <button id="new-question" class="secondary-btn">New Question</button>
-                    <p id="question-display">How do you feel about being here?</p>
-                </div>
-            </div>
-            
-            <button id="end-game" class="warning-btn">End Game</button>
         </div>
 
-        <div id="end-screen" class="game-screen">
-            <h2>Game Over</h2>
-            <div class="reveal">
-                <h3>The location was:</h3>
-                <p id="final-location">Location Name</p>
-                <div id="final-location-image-container" class="location-image-container">
-                    <img id="final-location-image" class="location-image" src="images/placeholder.jpg" alt="Location">
+        <!-- Game End Modal -->
+        <div id="game-end-modal" class="modal">
+            <div class="modal-content">
+                <h3 id="game-result">Game Over</h3>
+                <div id="game-summary"></div>
+                <div class="buttons">
+                    <button id="new-round-btn" class="btn primary">New Round</button>
+                    <button id="exit-game-btn" class="btn secondary">Exit to Lobby</button>
                 </div>
             </div>
-            <div class="spy-reveal">
-                <h3>The spies were:</h3>
-                <ul id="spy-list"></ul>
+        </div>
+
+        <!-- Tutorial Modal -->
+        <div id="tutorial-modal" class="modal">
+            <div class="modal-content tutorial-content">
+                <h3>How to Play Spyfall</h3>
+                <div class="tutorial-slide">
+                    <h4>Game Overview</h4>
+                    <p>Spyfall is a game of deception and deduction. Most players know the secret location, but one or more spies don't!</p>
+                    <p>The non-spy players must ask questions to identify the spy without giving away the location.</p>
+                    <p>The spy must blend in by answering questions without revealing their ignorance.</p>
+                </div>
+                <div class="tutorial-slide">
+                    <h4>Setup</h4>
+                    <p>1. Create a game or join with a code</p>
+                    <p>2. Wait for all players to join the lobby</p>
+                    <p>3. Start the round</p>
+                    <p>4. The game assigns roles and one or more spies randomly</p>
+                </div>
+                <div class="tutorial-slide">
+                    <h4>Gameplay</h4>
+                    <p>1. Players take turns asking each other questions</p>
+                    <p>2. Questions should be about the location without being too obvious</p>
+                    <p>3. Both questions and answers should be vague enough to not reveal the location directly</p>
+                    <p>4. At any time, players can call for a vote if they think they know who the spy is</p>
+                </div>
+                <div class="tutorial-slide">
+                    <h4>Winning the Game</h4>
+                    <p><strong>Spy wins if:</strong></p>
+                    <p>- They correctly guess the location</p>
+                    <p>- Time runs out without being caught</p>
+                    <p>- A non-spy is incorrectly voted as the spy</p>
+                    <p><strong>Non-spies win if:</strong></p>
+                    <p>- They correctly identify and vote out the spy</p>
+                </div>
+                <div class="tutorial-controls">
+                    <button id="prev-slide" class="btn small"><i class="fas fa-arrow-left"></i></button>
+                    <span id="slide-indicator">1/4</span>
+                    <button id="next-slide" class="btn small"><i class="fas fa-arrow-right"></i></button>
+                </div>
+                <button id="close-tutorial" class="btn secondary">Close</button>
             </div>
-            <button id="new-game" class="primary-btn">New Game</button>
         </div>
     </div>
-    
-    <script src="game-data.js"></script>
-    <script src="p2p-connection.js"></script>
-    <script src="script.js"></script>
+
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html> 

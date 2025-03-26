@@ -1,73 +1,77 @@
-# LocationSpy
+# Spyfall Alternative
 
-LocationSpy is a social deduction game inspired by Spyfall, designed for 3 or more players. In this game, all players except the spy(ies) know the current location. The spies must figure out the location, while other players try to identify who the spies are.
-
-## How to Play
-
-### Online Multiplayer Mode (Peer-to-Peer)
-1. **Create a Game**: The host sets up a game with custom settings and receives a 4-digit lobby code to share with friends.
-2. **Join a Game**: Players enter the lobby code and their name to join a game.
-3. **Start Game**: The host starts the game when all players have joined.
-4. **Role Assignment**: Each player sees their role on their own device. Non-spies see the location and their role, while spies see a list of all possible locations.
-5. **Gameplay**: Players take turns asking questions to identify the spies.
-  
-### Local Play Mode (Pass and Play)
-1. **Setup**: Enter player names and choose game settings.
-2. **Role Assignment**: Each player receives their role by passing the device. Everyone except the spy sees the location and their specific role.
-3. **Gameplay**: Players take turns asking questions to each other.
+A front-end-only web implementation of the popular deception party game Spyfall, with enhanced features and gameplay.
 
 ## Features
 
-- **True Peer-to-Peer Gameplay**: Play over the internet without any central server using WebRTC technology.
-- **Online Lobby System**: Create games and invite friends with a 4-digit code.
-- **Multiple Spy Support**: Choose to have 1-3 spies per game.
-- **100+ Locations**: The game includes over 100 diverse locations across standard and advanced packs.
-- **Location Images**: Visual representation of each location to enhance gameplay.
-- **Specialized Roles**: Each location has unique roles fitting that environment.
-- **Spy Helper**: Spies see a complete list of all possible locations.
-- **Suggested Questions**: The game provides helpful question suggestions if you're stuck.
-- **Customizable Game Length**: Set the timer from 5-15 minutes.
-- **Interactive Location List**: Cross out locations during play to narrow down possibilities.
+- **150+ Unique Locations**: Each with detailed descriptions and context
+- **Unique Roles**: At least 5 roles per location, with descriptions
+- **Smart Question Suggestions**: Location-specific and general questions to help guide gameplay
+- **Lobby System**: Create or join a game via shareable links/codes
+- **Flexible Game Settings**: Customize round time and number of spies
+- **Voting System**: Call votes to identify spies
+- **Mobile-Friendly Design**: Play on any device
+- **No Backend Required**: All game logic runs in the browser
 
-## Rules
+## How to Play
 
-1. Players must ask questions that could reasonably be asked about any location.
-2. Each player must answer questions when asked.
-3. Players can only ask one question per turn.
-4. If a player believes they know who the spy is, they can call for a vote.
-5. If the majority of players agree on a spy, that player is revealed.
-6. If the identified player is a spy, the non-spy players win (unless the spy correctly guesses the location).
-7. If the identified player is not a spy, the spies win.
-8. When multiple spies are in play, they don't know who the other spies are.
+### Game Overview
 
-## Tips
+Spyfall is a game of deception and deduction. Most players know the secret location, but one or more players (the spies) don't! The non-spy players must ask questions to identify the spy without giving away the location, while the spy must blend in by answering questions without revealing their ignorance.
 
-- If you're not a spy, answer questions carefully to demonstrate your knowledge of the location without being too obvious.
-- If you're a spy, listen carefully to other players' responses and try to blend in. Use the location list to help identify the likely location.
-- The "Suggested Questions" feature can provide inspiration for strategic questions.
-- When playing with multiple spies, be careful - you don't know who the other spies are!
+### Setup
+
+1. One player creates a game and becomes the host
+2. Other players join using the game code
+3. The host starts the round when everyone is ready
+4. Each player is randomly assigned a role, with one or more players secretly designated as spies
+
+### Gameplay
+
+1. Players take turns asking each other questions about the location
+2. Non-spy players should be careful not to make their questions too obvious
+3. The spy tries to blend in and figure out the location
+4. At any time, players can call for a vote if they think they know who the spy is
+
+### Winning the Game
+
+**Spy wins if:**
+- They correctly guess the location
+- Time runs out without being caught
+- A non-spy is incorrectly voted as the spy
+
+**Non-spies win if:**
+- They correctly identify and vote out the spy
 
 ## Running the Game
 
-Simply open the `index.html` file in a web browser. No installation required.
+1. Simply open `index.html` in any modern web browser
+2. No server or installation required
+3. To play with friends, all players need to be on the same local network, or the game needs to be hosted on a web server
 
-### For Online Play:
-1. One player creates a lobby and gets a 4-digit code
-2. Other players navigate to the same website and click "Join Game"
-3. Enter the 4-digit code to connect to the host's game
-4. All players must have an internet connection and a browser that supports WebRTC (most modern browsers)
-5. No server is required - connections are made directly between players' devices
+## Technical Details
 
-### For Local Play:
-1. Open the game in one browser
-2. Choose "Local Game" and set up players
-3. Pass the device between players
+This game is built using:
+- HTML5
+- CSS3
+- JavaScript (ES6+)
 
-## Technical Notes
+All game data and state is managed in the browser using LocalStorage for persistence.
 
-- The game uses PeerJS (WebRTC) for peer-to-peer connections
-- Multiple connection attempts are made to improve connection success rates
-- All game state is synchronized between players without a central server
-- Images for locations should be placed in the images folder following the naming convention: `location_name.jpg`
+## Future Enhancements
 
-Enjoy playing LocationSpy with your friends! 
+Potential future improvements include:
+- More locations and roles
+- Custom location creation
+- Game history and statistics
+- Theme customization
+- Audio cues and background music
+- Multiple language support
+
+## Credits
+
+This project is an enhanced alternative version of the popular party game Spyfall, designed for educational and entertainment purposes.
+
+## License
+
+This project is provided for personal use only. The game mechanics are inspired by the original Spyfall game created by Hobby World. 

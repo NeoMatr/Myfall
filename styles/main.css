@@ -1,0 +1,456 @@
+:root {
+    --primary-color: #4a69bd;
+    --primary-dark: #3a5894;
+    --secondary-color: #6a89cc;
+    --accent-color: #f6b93b;
+    --bg-color: #f5f6fa;
+    --card-bg: #ffffff;
+    --text-color: #2f3640;
+    --text-light: #57606f;
+    --border-color: #dcdde1;
+    --danger-color: #e84118;
+    --success-color: #4cd137;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --border-radius: 8px;
+    --spy-color: #e84118;
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+h1, h2, h3, h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition);
+    text-align: center;
+}
+
+.btn.primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn.primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn.secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn.secondary:hover {
+    background-color: var(--primary-color);
+}
+
+.btn.small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn.tutorial {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    margin-top: 1rem;
+}
+
+.btn.tutorial:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn.back-btn {
+    background-color: var(--text-light);
+    color: white;
+}
+
+/* Layout and pages */
+#app {
+    min-height: 100vh;
+    position: relative;
+}
+
+.page {
+    display: none;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.page.active {
+    display: block;
+}
+
+/* Landing Page */
+#landing-page .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    text-align: center;
+}
+
+#landing-page h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: var(--primary-color);
+}
+
+.buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+}
+
+/* Create and Join Game Pages */
+#create-game-page .container,
+#join-game-page .container {
+    max-width: 500px;
+    margin: 2rem auto;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+/* Lobby Page */
+#lobby-page .container {
+    max-width: 700px;
+    margin: 2rem auto;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.game-info {
+    background-color: var(--bg-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+}
+
+.game-info p {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.players-list {
+    margin-bottom: 2rem;
+}
+
+.players-list ul {
+    list-style: none;
+}
+
+.players-list li {
+    padding: 0.75rem;
+    background-color: var(--bg-color);
+    margin-bottom: 0.5rem;
+    border-radius: var(--border-radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.host-badge {
+    background-color: var(--accent-color);
+    color: var(--text-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Game Page */
+#game-page .container {
+    max-width: 900px;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.timer {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    background-color: var(--bg-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+}
+
+.role-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .role-info {
+        grid-template-columns: 1fr;
+    }
+}
+
+.role-info > div {
+    background-color: var(--card-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.tabs {
+    display: flex;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: var(--transition);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.player-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.player-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.player-card.current {
+    border: 2px solid var(--accent-color);
+}
+
+.player-card.voted {
+    border: 2px solid var(--danger-color);
+}
+
+.vote-section {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.location-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.location-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.location-card.current {
+    border: 2px solid var(--accent-color);
+}
+
+.questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.question-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--shadow);
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.tutorial-content {
+    max-width: 700px;
+}
+
+.tutorial-slide {
+    display: none;
+}
+
+.tutorial-slide.active {
+    display: block;
+}
+
+.tutorial-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1.5rem 0;
+    gap: 1rem;
+}
+
+.vote-players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+}
+
+.vote-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: var(--bg-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+
+.vote-option.selected {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+#game-summary {
+    margin: 1.5rem 0;
+}
+
+.spy-revealed {
+    color: var(--spy-color);
+    font-weight: bold;
+}
+
+.location-revealed {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .role-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .buttons {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .players-grid, 
+    .locations-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+} 

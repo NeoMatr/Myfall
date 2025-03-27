@@ -60,6 +60,7 @@ function initializeElements() {
         joinPlayerNameInput: document.getElementById('join-player-name'),
         gameCodeInput: document.getElementById('game-code'),
         joinLobbyBtn: document.getElementById('join-lobby-btn'),
+        debugCodeBtn: document.getElementById('debug-code-btn'),
         
         // Lobby page
         lobbyCode: document.getElementById('lobby-code'),
@@ -121,6 +122,7 @@ function setupEventListeners() {
     
     // Join game flow
     elements.joinLobbyBtn.addEventListener('click', joinGame);
+    elements.debugCodeBtn.addEventListener('click', debugGameCode);
     
     // Lobby functionality
     elements.copyCodeBtn.addEventListener('click', copyGameCode);
@@ -215,32 +217,59 @@ function createGame() {
         return;
     }
     
-    // Generate a random 4-letter game code
-    const gameId = generateGameId();
-    const playerId = generatePlayerId();
-    
-    // Initialize game state
-    gameState.gameId = gameId;
-    gameState.playerId = playerId;
-    gameState.playerName = playerName;
-    gameState.isHost = true;
-    gameState.settings.roundTime = roundTime;
-    gameState.settings.spyCount = spyCount;
-    gameState.players = [{
-        id: playerId,
-        name: playerName,
-        isHost: true,
-        isReady: true
-    }];
-    
-    // Save game state
-    saveGameState();
-    
-    // Set up the lobby
-    setupLobby();
-    
-    // Show the lobby page
-    showPage(elements.lobbyPage);
+    try {
+        // Generate a random 4-letter game code
+        const gameId = generateGameId();
+        const playerId = generatePlayerId();
+        
+        console.log('Creating game with ID:', gameId);
+        
+        // Initialize game state
+        gameState.gameId = gameId;
+        gameState.playerId = playerId;
+        gameState.playerName = playerName;
+        gameState.isHost = true;
+        gameState.settings.roundTime = roundTime;
+        gameState.settings.spyCount = spyCount;
+        gameState.players = [{
+            id: playerId,
+            name: playerName,
+            isHost: true,
+            isReady: true
+        }];
+        
+        // Create shared game data
+        const sharedGameData = {
+            gameId: gameId,
+            settings: {
+                roundTime: roundTime,
+                spyCount: spyCount
+            },
+            players: [{
+                id: playerId,
+                name: playerName,
+                isHost: true,
+                isReady: true
+            }],
+            isActive: false
+        };
+        
+        // Store the shared game data
+        localStorage.setItem(`spyfallGame_${gameId}`, JSON.stringify(sharedGameData));
+        console.log('Stored shared game data with key:', `spyfallGame_${gameId}`);
+        
+        // Save local game state
+        saveGameState();
+        
+        // Set up the lobby
+        setupLobby();
+        
+        // Show the lobby page
+        showPage(elements.lobbyPage);
+    } catch (e) {
+        console.error('Error creating game:', e);
+        alert('There was an error creating the game: ' + e.message);
+    }
 }
 
 // Join an existing game
@@ -258,15 +287,26 @@ function joinGame() {
         return;
     }
     
-    // Check if the game exists (would normally be a server request)
-    const existingGame = localStorage.getItem(`spyfallGame_${gameCode}`);
-    if (!existingGame) {
-        alert('Game not found. Please check the code and try again.');
-        return;
-    }
+    console.log('Attempting to join game with code:', gameCode);
     
     try {
+        // Check if the game exists (would normally be a server request)
+        const existingGame = localStorage.getItem(`spyfallGame_${gameCode}`);
+        console.log('Found game data:', existingGame ? 'Yes' : 'No');
+        
+        if (!existingGame) {
+            alert('Game not found. Please check the code and try again.');
+            return;
+        }
+        
         const gameData = JSON.parse(existingGame);
+        console.log('Parsed game data:', gameData);
+        
+        if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
+            console.error('Invalid game data structure:', gameData);
+            alert('This game appears to be corrupted. Please try a different game code.');
+            return;
+        }
         
         // Generate a player ID
         const playerId = generatePlayerId();
@@ -276,7 +316,7 @@ function joinGame() {
         gameState.playerId = playerId;
         gameState.playerName = playerName;
         gameState.isHost = false;
-        gameState.settings = gameData.settings;
+        gameState.settings = gameData.settings || { roundTime: 8, spyCount: 1 };
         
         // Add the player to the game
         const newPlayer = {
@@ -286,10 +326,16 @@ function joinGame() {
             isReady: true
         };
         
+        // Ensure players is an array
+        if (!gameData.players) {
+            gameData.players = [];
+        }
+        
         gameData.players.push(newPlayer);
         
         // Update the stored game data
         localStorage.setItem(`spyfallGame_${gameCode}`, JSON.stringify(gameData));
+        console.log('Updated game data in localStorage');
         
         // Add to local game state
         gameState.players = gameData.players;
@@ -304,7 +350,7 @@ function joinGame() {
         showPage(elements.lobbyPage);
     } catch (e) {
         console.error('Error joining game:', e);
-        alert('There was an error joining the game. Please try again.');
+        alert('There was an error joining the game: ' + e.message);
     }
 }
 
@@ -965,13 +1011,39 @@ function generatePlayerId() {
 
 // Save the current game state to localStorage
 function saveGameState() {
+    // Save the local game state
     localStorage.setItem('spyfallGame', JSON.stringify(gameState));
+    console.log('Saved local game state');
     
     // If we're the host, also update the shared game data
     if (gameState.isHost && gameState.gameId) {
-        const gameData = JSON.parse(localStorage.getItem(`spyfallGame_${gameState.gameId}`) || '{}');
-        gameData.settings = gameState.settings;
-        localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(gameData));
+        try {
+            // Get existing game data or create new object if it doesn't exist
+            let gameData = {};
+            const existingData = localStorage.getItem(`spyfallGame_${gameState.gameId}`);
+            
+            if (existingData) {
+                gameData = JSON.parse(existingData);
+            }
+            
+            // Update with latest information
+            gameData.gameId = gameState.gameId;
+            gameData.settings = gameState.settings;
+            gameData.players = gameState.players;
+            
+            // If the game is active, update those properties too
+            if (gameState.isActive) {
+                gameData.isActive = true;
+                gameData.location = gameState.currentLocation.id;
+                gameData.spies = gameData.spies || [];
+                gameData.endTime = gameState.endTime;
+            }
+            
+            localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(gameData));
+            console.log('Updated shared game data as host');
+        } catch (e) {
+            console.error('Error updating shared game data:', e);
+        }
     }
 }
 
@@ -995,4 +1067,37 @@ function resetGameState() {
     gameState.votes = {};
     
     localStorage.removeItem('spyfallGame');
+}
+
+// Debug function to check game code
+function debugGameCode() {
+    const gameCode = elements.gameCodeInput.value.trim().toUpperCase();
+    
+    if (!gameCode) {
+        alert('Please enter a game code to debug');
+        return;
+    }
+    
+    // List all localStorage keys
+    console.log('All localStorage keys:');
+    for (let i = 0; i < localStorage.length; i++) {
+        console.log(localStorage.key(i));
+    }
+    
+    // Check for this specific game code
+    const gameData = localStorage.getItem(`spyfallGame_${gameCode}`);
+    console.log(`Looking for game with key: spyfallGame_${gameCode}`);
+    
+    if (!gameData) {
+        alert(`Game with code ${gameCode} not found in localStorage.`);
+    } else {
+        try {
+            const parsedData = JSON.parse(gameData);
+            console.log('Game data found:', parsedData);
+            alert(`Game found! Players: ${parsedData.players ? parsedData.players.length : 0}`);
+        } catch (e) {
+            console.error('Error parsing game data:', e);
+            alert(`Error parsing game data: ${e.message}`);
+        }
+    }
 } 

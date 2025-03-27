@@ -82,6 +82,7 @@ function initializeElements() {
         locationsContainer: document.getElementById('locations-container'),
         questionsContainer: document.getElementById('questions-container'),
         voteBtn: document.getElementById('vote-btn'),
+        endGameBtn: document.getElementById('end-game-btn'),
         
         // Vote modal
         voteModal: document.getElementById('vote-modal'),
@@ -131,6 +132,7 @@ function setupEventListeners() {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
     elements.voteBtn.addEventListener('click', showVoteModal);
+    elements.endGameBtn.addEventListener('click', endGameEarly);
     
     // Vote modal
     elements.submitVoteBtn.addEventListener('click', submitVote);
@@ -327,6 +329,12 @@ function setupLobby() {
 function updatePlayersList() {
     elements.playersContainer.innerHTML = '';
     
+    if (!gameState.players || !Array.isArray(gameState.players)) {
+        console.error('Players list is undefined or not an array');
+        gameState.players = gameState.players || [];
+        return;
+    }
+    
     gameState.players.forEach(player => {
         const playerItem = document.createElement('li');
         playerItem.innerHTML = `
@@ -336,9 +344,9 @@ function updatePlayersList() {
         elements.playersContainer.appendChild(playerItem);
     });
     
-    // Enable start button only if there are at least 3 players
+    // Remove minimum player restriction for testing
     if (gameState.isHost) {
-        elements.startRoundBtn.disabled = gameState.players.length < 3;
+        elements.startRoundBtn.disabled = false;
     }
 }
 
@@ -378,11 +386,11 @@ function leaveLobby() {
 function startRound() {
     if (!gameState.isHost) return;
     
-    // Check if there are enough players
-    if (gameState.players.length < 3) {
-        alert('You need at least 3 players to start a round.');
-        return;
-    }
+    // Remove player limit check for testing purposes
+    // if (gameState.players.length < 3) {
+    //     alert('You need at least 3 players to start a round.');
+    //     return;
+    // }
     
     // Select a random location
     const randomLocationIndex = Math.floor(Math.random() * GAME_DATA.locations.length);
@@ -393,11 +401,18 @@ function startRound() {
     const playerRoles = {};
     const spies = [];
     
-    // Select random spies
-    const spyCount = Math.min(gameState.settings.spyCount, gameState.players.length - 1);
+    // Select random spies - ensure at least one spy
+    // but no more than players.length - 1
+    let spyCount = Math.min(gameState.settings.spyCount, gameState.players.length - 1);
+    // Ensure at least one spy for single player testing
+    if (gameState.players.length === 1) {
+        spyCount = 1;
+    }
+    
     const playerIndices = gameState.players.map((_, index) => index);
     
     for (let i = 0; i < spyCount; i++) {
+        if (playerIndices.length === 0) break; // Safety check
         const randomIndex = Math.floor(Math.random() * playerIndices.length);
         const spyPlayerIndex = playerIndices.splice(randomIndex, 1)[0];
         spies.push(gameState.players[spyPlayerIndex].id);
@@ -482,6 +497,9 @@ function setupActiveGame() {
         elements.playerRole.textContent = gameState.currentRole.title;
         elements.roleDescription.textContent = gameState.currentRole.description;
     }
+    
+    // Show/hide host controls
+    elements.endGameBtn.style.display = gameState.isHost ? 'block' : 'none';
     
     // Show all players
     updateGamePlayersList();
@@ -682,6 +700,25 @@ function submitVote() {
     }
 }
 
+// Function to end the game early (host only)
+function endGameEarly() {
+    if (!gameState.isHost) return;
+    
+    if (confirm('Are you sure you want to end the game early?')) {
+        // Get game data
+        const gameData = JSON.parse(localStorage.getItem(`spyfallGame_${gameState.gameId}`));
+        if (gameData) {
+            // Mark the game as inactive
+            gameData.isActive = false;
+            gameData.gameResult = 'ended';
+            localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(gameData));
+            
+            // End the game for the host
+            endGame('ended');
+        }
+    }
+}
+
 // End the current game round
 function endGame(reason, accusedPlayerId) {
     // Stop the timer
@@ -700,27 +737,37 @@ function endGame(reason, accusedPlayerId) {
     let resultTitle = '';
     let resultMessage = '';
     
-    const accusedPlayer = accusedPlayerId ? 
+    // Add null checks for accusedPlayer
+    const accusedPlayer = accusedPlayerId && gameState.players ? 
         gameState.players.find(p => p.id === accusedPlayerId) : null;
+    
+    // Ensure location is defined before accessing properties
+    const locationName = gameState.currentLocation ? gameState.currentLocation.name : 'Unknown';
     
     switch (reason) {
         case 'caught':
             resultTitle = 'The Spy has been caught!';
-            resultMessage = `<p>The group has successfully identified <span class="spy-revealed">${accusedPlayer.name}</span> as the spy.</p>
-                <p>The location was: <span class="location-revealed">${gameState.currentLocation.name}</span></p>`;
+            resultMessage = `<p>The group has successfully identified <span class="spy-revealed">${accusedPlayer ? accusedPlayer.name : 'the spy'}</span> as the spy.</p>
+                <p>The location was: <span class="location-revealed">${locationName}</span></p>`;
             break;
             
         case 'wrongAccusation':
             resultTitle = 'Wrong Accusation!';
-            resultMessage = `<p>The group incorrectly accused <span class="spy-revealed">${accusedPlayer.name}</span>, who was not the spy!</p>
+            resultMessage = `<p>The group incorrectly accused <span class="spy-revealed">${accusedPlayer ? accusedPlayer.name : 'someone'}</span>, who was not the spy!</p>
                 <p>The spies win this round.</p>
-                <p>The location was: <span class="location-revealed">${gameState.currentLocation.name}</span></p>`;
+                <p>The location was: <span class="location-revealed">${locationName}</span></p>`;
             break;
             
         case 'timeout':
             resultTitle = 'Time\'s Up!';
             resultMessage = `<p>The spies have successfully avoided detection.</p>
-                <p>The location was: <span class="location-revealed">${gameState.currentLocation.name}</span></p>`;
+                <p>The location was: <span class="location-revealed">${locationName}</span></p>`;
+            break;
+            
+        case 'ended':
+            resultTitle = 'Game Ended by Host';
+            resultMessage = `<p>The host has ended the game early.</p>
+                <p>The location was: <span class="location-revealed">${locationName}</span></p>`;
             break;
     }
     
@@ -792,6 +839,13 @@ function startPolling() {
         try {
             const parsedData = JSON.parse(gameData);
             
+            // Ensure players array exists
+            if (!parsedData.players) {
+                parsedData.players = [gameState.players[0]]; // Use the current player if no players in parsed data
+                // Update the game data with the fixed players array
+                localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(parsedData));
+            }
+            
             // Update player list
             gameState.players = parsedData.players;
             updatePlayersList();
@@ -804,13 +858,13 @@ function startPolling() {
                 gameState.votes = parsedData.votes || {};
                 
                 // Check if we are a spy
-                gameState.isSpy = parsedData.spies.includes(gameState.playerId);
+                gameState.isSpy = parsedData.spies && parsedData.spies.includes(gameState.playerId);
                 
                 // Get location and role
                 const locationId = parsedData.location;
                 gameState.currentLocation = GAME_DATA.locations.find(l => l.id === locationId);
                 
-                if (!gameState.isSpy) {
+                if (!gameState.isSpy && parsedData.roles && parsedData.roles[gameState.playerId]) {
                     const roleId = parsedData.roles[gameState.playerId].roleId;
                     gameState.currentRole = gameState.currentLocation.roles.find(r => r.id === roleId);
                 }
@@ -825,6 +879,24 @@ function startPolling() {
                 showPage(elements.gamePage);
                 
                 // Clear the polling since we'll use the game timer
+                clearInterval(pollInterval);
+            } 
+            // Check if the game was ended by the host
+            else if (gameState.isActive && !parsedData.isActive && parsedData.gameResult === 'ended') {
+                // Game was ended by the host
+                gameState.isActive = false;
+                
+                // Get location for the end screen
+                const locationId = parsedData.location;
+                gameState.currentLocation = GAME_DATA.locations.find(l => l.id === locationId);
+                
+                // Save game state
+                saveGameState();
+                
+                // End the game locally
+                endGame('ended');
+                
+                // Clear polling
                 clearInterval(pollInterval);
             }
         } catch (e) {

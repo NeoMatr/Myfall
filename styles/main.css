@@ -69,6 +69,15 @@ h1, h2, h3, h4 {
     background-color: var(--primary-color);
 }
 
+.btn.danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn.danger:hover {
+    background-color: #c23616;
+}
+
 .btn.small {
     padding: 0.25rem 0.5rem;
     font-size: 0.875rem;
@@ -218,6 +227,8 @@ h1, h2, h3, h4 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .timer {
@@ -227,6 +238,10 @@ h1, h2, h3, h4 {
     background-color: var(--bg-color);
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
+}
+
+#end-game-btn {
+    margin-left: auto;
 }
 
 .role-info {

@@ -6,6 +6,7 @@
     <title>Spyfall Alternative</title>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -69,6 +70,23 @@
             <div class="container">
                 <h2>Game Lobby</h2>
                 <div class="game-info">
+                    <div class="share-section">
+                        <h3>Share Game</h3>
+                        <div class="share-options">
+                            <div class="qr-code" id="game-qr"></div>
+                            <div class="link-share">
+                                <div class="form-group">
+                                    <label for="share-player-name">Quick Join Name:</label>
+                                    <input type="text" id="share-player-name" placeholder="Enter player name">
+                                </div>
+                                <p>Game Link: <span id="game-link">loading...</span></p>
+                                <div class="share-buttons">
+                                    <button id="copy-link-btn" class="btn small"><i class="fas fa-link"></i> Copy Link</button>
+                                    <button id="copy-quick-link-btn" class="btn small"><i class="fas fa-link"></i> Copy Quick Join Link</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <p>Game Code: <span id="lobby-code">XXXX</span> <button id="copy-code-btn" class="btn small"><i class="fas fa-copy"></i></button></p>
                     <p>Round Time: <span id="lobby-time">8</span> minutes</p>
                     <p>Spies: <span id="lobby-spies">1</span></p>

@@ -70,6 +70,11 @@ function initializeElements() {
         lobbySpies: document.getElementById('lobby-spies'),
         playersContainer: document.getElementById('players-container'),
         copyCodeBtn: document.getElementById('copy-code-btn'),
+        copyLinkBtn: document.getElementById('copy-link-btn'),
+        copyQuickLinkBtn: document.getElementById('copy-quick-link-btn'),
+        sharePlayerName: document.getElementById('share-player-name'),
+        gameQR: document.getElementById('game-qr'),
+        gameLink: document.getElementById('game-link'),
         startRoundBtn: document.getElementById('start-round-btn'),
         leaveLobbyBtn: document.getElementById('leave-lobby-btn'),
         
@@ -128,6 +133,9 @@ function setupEventListeners() {
     
     // Lobby functionality
     elements.copyCodeBtn.addEventListener('click', copyGameCode);
+    elements.copyLinkBtn.addEventListener('click', copyGameLink);
+    elements.copyQuickLinkBtn.addEventListener('click', copyQuickJoinLink);
+    elements.sharePlayerName.addEventListener('input', updateQRCode);
     elements.startRoundBtn.addEventListener('click', startRound);
     elements.leaveLobbyBtn.addEventListener('click', leaveLobby);
     
@@ -155,6 +163,24 @@ function setupEventListeners() {
 
 // Initialize the game
 function initializeGame() {
+    // Check URL parameters for game code and player name
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameCode = urlParams.get('game');
+    const playerName = urlParams.get('player');
+    
+    if (gameCode) {
+        if (playerName) {
+            // Auto-join the game if both code and name are provided
+            elements.joinPlayerNameInput.value = playerName;
+            elements.gameCodeInput.value = gameCode;
+            joinGame(true);  // Pass true to indicate direct join
+        } else {
+            // Show join page with pre-filled code if only code is provided
+            elements.gameCodeInput.value = gameCode;
+            showPage(elements.joinGamePage);
+        }
+    }
+    
     // Check if there's a saved game in localStorage
     const savedGame = localStorage.getItem('spyfallGame');
     if (savedGame) {
@@ -212,6 +238,13 @@ function setupLobby() {
     elements.lobbyCode.textContent = gameState.gameId;
     elements.lobbyTime.textContent = gameState.settings.roundTime;
     elements.lobbySpies.textContent = gameState.settings.spyCount;
+    
+    // Generate and display game link
+    const gameLink = generateGameLink(gameState.gameId);
+    elements.gameLink.textContent = gameLink;
+    
+    // Generate initial QR code
+    updateQRCode();
     
     // Show/hide host controls
     elements.startRoundBtn.style.display = gameState.isHost ? 'block' : 'none';
@@ -457,10 +490,10 @@ function createGame() {
     }
 }
 
-// Update joinGame to use timestamps
-function joinGame() {
-    const playerName = elements.joinPlayerNameInput.value.trim();
-    const gameCode = elements.gameCodeInput.value.trim().toUpperCase();
+// Update joinGame to handle direct joins
+function joinGame(isDirectJoin = false) {
+    const playerName = isDirectJoin ? elements.joinPlayerNameInput.value.trim() : elements.joinPlayerNameInput.value.trim();
+    const gameCode = isDirectJoin ? elements.gameCodeInput.value.trim().toUpperCase() : elements.gameCodeInput.value.trim().toUpperCase();
     
     if (!playerName) {
         alert('Please enter your name');
@@ -471,8 +504,6 @@ function joinGame() {
         alert('Please enter a valid 4-letter game code');
         return;
     }
-    
-    console.log('Attempting to join game with code:', gameCode);
     
     try {
         const existingGame = localStorage.getItem(`spyfallGame_${gameCode}`);
@@ -510,6 +541,11 @@ function joinGame() {
         saveGameState();
         setupLobby();
         showPage(elements.lobbyPage);
+        
+        // Update URL with game code
+        const url = new URL(window.location.href);
+        url.searchParams.set('game', gameCode);
+        window.history.pushState({}, '', url);
     } catch (e) {
         console.error('Error joining game:', e);
         alert('There was an error joining the game: ' + e.message);
@@ -550,6 +586,69 @@ function copyGameCode() {
         .catch(err => {
             console.error('Could not copy text: ', err);
         });
+}
+
+// Generate a shareable game link
+function generateGameLink(gameId, includePlayerName = false) {
+    const url = new URL(window.location.href);
+    // Remove any existing parameters
+    url.search = '';
+    // Add the game ID parameter
+    url.searchParams.set('game', gameId);
+    
+    // Add player name if provided
+    if (includePlayerName) {
+        const playerName = elements.sharePlayerName.value.trim();
+        if (playerName) {
+            url.searchParams.set('player', playerName);
+        }
+    }
+    
+    return url.href;
+}
+
+// Copy regular game link to clipboard
+function copyGameLink() {
+    const gameLink = generateGameLink(gameState.gameId);
+    navigator.clipboard.writeText(gameLink)
+        .then(() => {
+            alert('Game link copied to clipboard!');
+        })
+        .catch(err => {
+            console.error('Could not copy link: ', err);
+        });
+}
+
+// Copy quick join link to clipboard
+function copyQuickJoinLink() {
+    const playerName = elements.sharePlayerName.value.trim();
+    if (!playerName) {
+        alert('Please enter a player name first');
+        return;
+    }
+    
+    const quickJoinLink = generateGameLink(gameState.gameId, true);
+    navigator.clipboard.writeText(quickJoinLink)
+        .then(() => {
+            alert('Quick join link copied to clipboard!');
+        })
+        .catch(err => {
+            console.error('Could not copy link: ', err);
+        });
+}
+
+// Update QR code when player name changes
+function updateQRCode() {
+    const link = generateGameLink(gameState.gameId, true);
+    elements.gameQR.innerHTML = '';  // Clear existing QR code
+    new QRCode(elements.gameQR, {
+        text: link,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
 }
 
 // Start a new round of the game

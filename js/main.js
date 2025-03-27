@@ -18,7 +18,9 @@ const gameState = {
     isActive: false,
     isSpy: false,
     timerInterval: null,
+    activityInterval: null,  // For tracking player activity
     endTime: null,
+    lastActive: null,  // Player's last activity timestamp
     votes: {}
 };
 
@@ -196,7 +198,203 @@ function hideModal(modal) {
     modal.classList.remove('active');
 }
 
-// Create a new game as host
+// Add timestamp to player data for activity tracking
+function addTimestampToPlayer(player) {
+    return {
+        ...player,
+        lastActive: Date.now()
+    };
+}
+
+// Set up the game lobby
+function setupLobby() {
+    // Update lobby information
+    elements.lobbyCode.textContent = gameState.gameId;
+    elements.lobbyTime.textContent = gameState.settings.roundTime;
+    elements.lobbySpies.textContent = gameState.settings.spyCount;
+    
+    // Show/hide host controls
+    elements.startRoundBtn.style.display = gameState.isHost ? 'block' : 'none';
+    
+    // Update player list
+    updatePlayersList();
+    
+    // Set up storage event listener for real-time updates
+    window.addEventListener('storage', handleStorageEvent);
+    
+    // Start the activity ping
+    startActivityPing();
+}
+
+// Handle storage events for real-time updates
+function handleStorageEvent(event) {
+    if (!gameState.gameId) return;
+    
+    const gameKey = `spyfallGame_${gameState.gameId}`;
+    if (event.key === gameKey) {
+        try {
+            const newData = JSON.parse(event.newValue);
+            if (!newData) {
+                // Game was deleted
+                if (!gameState.isHost) {
+                    alert('The game has been ended by the host.');
+                }
+                resetGameState();
+                showPage(elements.landingPage);
+                return;
+            }
+            
+            // Update local state with new data
+            updateGameState(newData);
+            
+            // Update UI
+            if (newData.isActive && !gameState.isActive) {
+                // Game has started
+                handleGameStart(newData);
+            } else if (!newData.isActive && gameState.isActive) {
+                // Game has ended
+                handleGameEnd(newData);
+            } else {
+                // Regular update
+                updatePlayersList();
+            }
+        } catch (e) {
+            console.error('Error handling storage event:', e);
+        }
+    }
+}
+
+// Start activity ping to track player presence
+function startActivityPing() {
+    // Clear any existing interval
+    if (gameState.activityInterval) {
+        clearInterval(gameState.activityInterval);
+    }
+    
+    // Update player activity immediately
+    updatePlayerActivity();
+    
+    // Set up interval for regular updates
+    gameState.activityInterval = setInterval(updatePlayerActivity, 5000);
+}
+
+// Update player activity timestamp
+function updatePlayerActivity() {
+    if (!gameState.gameId || !gameState.playerId) return;
+    
+    try {
+        const gameKey = `spyfallGame_${gameState.gameId}`;
+        const gameData = JSON.parse(localStorage.getItem(gameKey));
+        
+        if (!gameData) return;
+        
+        // Update player's timestamp
+        const playerIndex = gameData.players.findIndex(p => p.id === gameState.playerId);
+        if (playerIndex >= 0) {
+            gameData.players[playerIndex] = addTimestampToPlayer(gameData.players[playerIndex]);
+            
+            // If host, also clean up inactive players
+            if (gameState.isHost) {
+                const now = Date.now();
+                gameData.players = gameData.players.filter(player => {
+                    // Keep players active in last 15 seconds
+                    return now - (player.lastActive || 0) < 15000;
+                });
+            }
+            
+            localStorage.setItem(gameKey, JSON.stringify(gameData));
+        }
+    } catch (e) {
+        console.error('Error updating player activity:', e);
+    }
+}
+
+// Update local game state with new data
+function updateGameState(newData) {
+    // Update settings if they've changed
+    if (newData.settings) {
+        gameState.settings = newData.settings;
+    }
+    
+    // Update players list
+    gameState.players = newData.players;
+    
+    // Update game status
+    gameState.isActive = newData.isActive;
+    
+    if (newData.isActive) {
+        gameState.endTime = newData.endTime;
+        gameState.votes = newData.votes || {};
+        gameState.isSpy = newData.spies && newData.spies.includes(gameState.playerId);
+        
+        if (newData.location) {
+            const location = GAME_DATA.locations.find(l => l.id === newData.location);
+            gameState.currentLocation = location;
+            
+            if (!gameState.isSpy && newData.roles && newData.roles[gameState.playerId]) {
+                const roleId = newData.roles[gameState.playerId].roleId;
+                gameState.currentRole = location.roles.find(r => r.id === roleId);
+            }
+        }
+    }
+}
+
+// Handle game start event
+function handleGameStart(gameData) {
+    gameState.isActive = true;
+    updateGameState(gameData);
+    setupActiveGame();
+    showPage(elements.gamePage);
+}
+
+// Handle game end event
+function handleGameEnd(gameData) {
+    gameState.isActive = false;
+    updateGameState(gameData);
+    
+    if (gameData.gameResult) {
+        endGame(gameData.gameResult, gameData.accusedPlayerId);
+    } else {
+        showPage(elements.lobbyPage);
+    }
+}
+
+// Clean up when leaving lobby
+function cleanupLobby() {
+    // Clear intervals
+    if (gameState.activityInterval) {
+        clearInterval(gameState.activityInterval);
+        gameState.activityInterval = null;
+    }
+    
+    // Remove event listeners
+    window.removeEventListener('storage', handleStorageEvent);
+}
+
+// Update the leaveLobby function to use cleanup
+function leaveLobby() {
+    cleanupLobby();
+    
+    if (gameState.isHost) {
+        // If host leaves, the game is ended
+        localStorage.removeItem(`spyfallGame_${gameState.gameId}`);
+    } else {
+        // Otherwise, just remove the player
+        const gameData = JSON.parse(localStorage.getItem(`spyfallGame_${gameState.gameId}`));
+        if (gameData) {
+            gameData.players = gameData.players.filter(p => p.id !== gameState.playerId);
+            localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(gameData));
+        }
+    }
+    
+    // Clear game state
+    resetGameState();
+    
+    // Return to landing page
+    showPage(elements.landingPage);
+}
+
+// Update createGame to use timestamps
 function createGame() {
     const playerName = elements.playerNameInput.value.trim();
     const roundTime = parseInt(elements.roundTimeInput.value, 10);
@@ -218,25 +416,24 @@ function createGame() {
     }
     
     try {
-        // Generate a random 4-letter game code
         const gameId = generateGameId();
         const playerId = generatePlayerId();
         
-        console.log('Creating game with ID:', gameId);
+        // Initialize game state with timestamped player
+        const player = addTimestampToPlayer({
+            id: playerId,
+            name: playerName,
+            isHost: true,
+            isReady: true
+        });
         
-        // Initialize game state
         gameState.gameId = gameId;
         gameState.playerId = playerId;
         gameState.playerName = playerName;
         gameState.isHost = true;
         gameState.settings.roundTime = roundTime;
         gameState.settings.spyCount = spyCount;
-        gameState.players = [{
-            id: playerId,
-            name: playerName,
-            isHost: true,
-            isReady: true
-        }];
+        gameState.players = [player];
         
         // Create shared game data
         const sharedGameData = {
@@ -245,26 +442,14 @@ function createGame() {
                 roundTime: roundTime,
                 spyCount: spyCount
             },
-            players: [{
-                id: playerId,
-                name: playerName,
-                isHost: true,
-                isReady: true
-            }],
-            isActive: false
+            players: [player],
+            isActive: false,
+            lastUpdate: Date.now()
         };
         
-        // Store the shared game data
         localStorage.setItem(`spyfallGame_${gameId}`, JSON.stringify(sharedGameData));
-        console.log('Stored shared game data with key:', `spyfallGame_${gameId}`);
-        
-        // Save local game state
         saveGameState();
-        
-        // Set up the lobby
         setupLobby();
-        
-        // Show the lobby page
         showPage(elements.lobbyPage);
     } catch (e) {
         console.error('Error creating game:', e);
@@ -272,7 +457,7 @@ function createGame() {
     }
 }
 
-// Join an existing game
+// Update joinGame to use timestamps
 function joinGame() {
     const playerName = elements.joinPlayerNameInput.value.trim();
     const gameCode = elements.gameCodeInput.value.trim().toUpperCase();
@@ -290,85 +475,45 @@ function joinGame() {
     console.log('Attempting to join game with code:', gameCode);
     
     try {
-        // Check if the game exists (would normally be a server request)
         const existingGame = localStorage.getItem(`spyfallGame_${gameCode}`);
-        console.log('Found game data:', existingGame ? 'Yes' : 'No');
-        
         if (!existingGame) {
             alert('Game not found. Please check the code and try again.');
             return;
         }
         
         const gameData = JSON.parse(existingGame);
-        console.log('Parsed game data:', gameData);
-        
         if (!gameData || !gameData.players || !Array.isArray(gameData.players)) {
-            console.error('Invalid game data structure:', gameData);
             alert('This game appears to be corrupted. Please try a different game code.');
             return;
         }
         
-        // Generate a player ID
         const playerId = generatePlayerId();
+        const player = addTimestampToPlayer({
+            id: playerId,
+            name: playerName,
+            isHost: false,
+            isReady: true
+        });
         
-        // Update game state
         gameState.gameId = gameCode;
         gameState.playerId = playerId;
         gameState.playerName = playerName;
         gameState.isHost = false;
         gameState.settings = gameData.settings || { roundTime: 8, spyCount: 1 };
         
-        // Add the player to the game
-        const newPlayer = {
-            id: playerId,
-            name: playerName,
-            isHost: false,
-            isReady: true
-        };
+        gameData.players.push(player);
+        gameData.lastUpdate = Date.now();
         
-        // Ensure players is an array
-        if (!gameData.players) {
-            gameData.players = [];
-        }
-        
-        gameData.players.push(newPlayer);
-        
-        // Update the stored game data
         localStorage.setItem(`spyfallGame_${gameCode}`, JSON.stringify(gameData));
-        console.log('Updated game data in localStorage');
         
-        // Add to local game state
         gameState.players = gameData.players;
-        
-        // Save game state
         saveGameState();
-        
-        // Set up the lobby
         setupLobby();
-        
-        // Show the lobby page
         showPage(elements.lobbyPage);
     } catch (e) {
         console.error('Error joining game:', e);
         alert('There was an error joining the game: ' + e.message);
     }
-}
-
-// Set up the game lobby
-function setupLobby() {
-    // Update lobby information
-    elements.lobbyCode.textContent = gameState.gameId;
-    elements.lobbyTime.textContent = gameState.settings.roundTime;
-    elements.lobbySpies.textContent = gameState.settings.spyCount;
-    
-    // Show/hide host controls
-    elements.startRoundBtn.style.display = gameState.isHost ? 'block' : 'none';
-    
-    // Update player list
-    updatePlayersList();
-    
-    // Start polling for game updates (would be websockets in a real implementation)
-    startPolling();
 }
 
 // Update the list of players in the lobby
@@ -405,27 +550,6 @@ function copyGameCode() {
         .catch(err => {
             console.error('Could not copy text: ', err);
         });
-}
-
-// Leave the current lobby
-function leaveLobby() {
-    if (gameState.isHost) {
-        // If host leaves, the game is ended
-        localStorage.removeItem(`spyfallGame_${gameState.gameId}`);
-    } else {
-        // Otherwise, just remove the player
-        const gameData = JSON.parse(localStorage.getItem(`spyfallGame_${gameState.gameId}`));
-        if (gameData) {
-            gameData.players = gameData.players.filter(p => p.id !== gameState.playerId);
-            localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(gameData));
-        }
-    }
-    
-    // Clear game state
-    resetGameState();
-    
-    // Return to landing page
-    showPage(elements.landingPage);
 }
 
 // Start a new round of the game
@@ -863,94 +987,6 @@ function exitToLobby() {
     showPage(elements.lobbyPage);
 }
 
-// Poll for game updates
-function startPolling() {
-    // In a real implementation, this would be replaced with WebSockets
-    const pollInterval = setInterval(() => {
-        if (!gameState.gameId) {
-            clearInterval(pollInterval);
-            return;
-        }
-        
-        const gameData = localStorage.getItem(`spyfallGame_${gameState.gameId}`);
-        if (!gameData) {
-            // Game was deleted
-            alert('The game has ended.');
-            resetGameState();
-            showPage(elements.landingPage);
-            clearInterval(pollInterval);
-            return;
-        }
-        
-        try {
-            const parsedData = JSON.parse(gameData);
-            
-            // Ensure players array exists
-            if (!parsedData.players) {
-                parsedData.players = [gameState.players[0]]; // Use the current player if no players in parsed data
-                // Update the game data with the fixed players array
-                localStorage.setItem(`spyfallGame_${gameState.gameId}`, JSON.stringify(parsedData));
-            }
-            
-            // Update player list
-            gameState.players = parsedData.players;
-            updatePlayersList();
-            
-            // Check if the game has started
-            if (parsedData.isActive && !gameState.isActive) {
-                // Game has started
-                gameState.isActive = true;
-                gameState.endTime = parsedData.endTime;
-                gameState.votes = parsedData.votes || {};
-                
-                // Check if we are a spy
-                gameState.isSpy = parsedData.spies && parsedData.spies.includes(gameState.playerId);
-                
-                // Get location and role
-                const locationId = parsedData.location;
-                gameState.currentLocation = GAME_DATA.locations.find(l => l.id === locationId);
-                
-                if (!gameState.isSpy && parsedData.roles && parsedData.roles[gameState.playerId]) {
-                    const roleId = parsedData.roles[gameState.playerId].roleId;
-                    gameState.currentRole = gameState.currentLocation.roles.find(r => r.id === roleId);
-                }
-                
-                // Save game state
-                saveGameState();
-                
-                // Set up the active game
-                setupActiveGame();
-                
-                // Show the game page
-                showPage(elements.gamePage);
-                
-                // Clear the polling since we'll use the game timer
-                clearInterval(pollInterval);
-            } 
-            // Check if the game was ended by the host
-            else if (gameState.isActive && !parsedData.isActive && parsedData.gameResult === 'ended') {
-                // Game was ended by the host
-                gameState.isActive = false;
-                
-                // Get location for the end screen
-                const locationId = parsedData.location;
-                gameState.currentLocation = GAME_DATA.locations.find(l => l.id === locationId);
-                
-                // Save game state
-                saveGameState();
-                
-                // End the game locally
-                endGame('ended');
-                
-                // Clear polling
-                clearInterval(pollInterval);
-            }
-        } catch (e) {
-            console.error('Error polling game:', e);
-        }
-    }, 2000); // Poll every 2 seconds
-}
-
 // Setup tutorial slides
 function setupTutorial() {
     elements.tutorialSlides[0].classList.add('active');
@@ -1063,7 +1099,9 @@ function resetGameState() {
     gameState.isActive = false;
     gameState.isSpy = false;
     gameState.timerInterval = null;
+    gameState.activityInterval = null;
     gameState.endTime = null;
+    gameState.lastActive = null;
     gameState.votes = {};
     
     localStorage.removeItem('spyfallGame');
